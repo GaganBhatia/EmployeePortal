@@ -1,11 +1,12 @@
 package com.demo.employeservice.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import com.demo.employeservice.model.SwipeRequestDao;
 import com.demo.employeservice.model.SwipeRequestModel;
 import com.demo.employeservice.repository.SwipeRequestRepository;
-
+@Service
 public class EmployeeAttendenceServiceImpl implements EmployeeAttendenceService {
 
 	@Autowired

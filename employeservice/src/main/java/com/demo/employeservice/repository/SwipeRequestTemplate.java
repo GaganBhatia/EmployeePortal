@@ -1,5 +1,5 @@
 package com.demo.employeservice.repository;
 
-public class SwipeRequestTemplate {
+public interface SwipeRequestTemplate {
 
 }
