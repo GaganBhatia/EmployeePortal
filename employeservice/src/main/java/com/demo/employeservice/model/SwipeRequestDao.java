@@ -1,5 +1,9 @@
 package com.demo.employeservice.model;
 
+import java.util.UUID;
+
+import org.bson.BsonTimestamp;
+import org.bson.types.ObjectId;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import jakarta.annotation.Generated;
@@ -8,24 +12,21 @@ import jakarta.annotation.Generated;
 public class SwipeRequestDao {
 
 	@Generated(value = { "_id" })
-	private Long id;
+	private ObjectId id;
 	private String employeeId;
 	private String buildingId;
-	private Long timeStamp;
-	private SwipeRequestType requestType;
 
-	public SwipeRequestDao(String employeeId, String buildingId,
-			SwipeRequestType requestType) {
-		this.employeeId = employeeId;
-		this.buildingId = buildingId;
-		this.requestType = requestType;
+	public SwipeRequestDao() {
 	}
 
-	public Long getId() {
+	private BsonTimestamp timeStamp;
+	private SwipeRequestType requestType;
+
+	public ObjectId getId() {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(ObjectId id) {
 		this.id = id;
 	}
 
@@ -45,8 +46,12 @@ public class SwipeRequestDao {
 		this.buildingId = buildingId;
 	}
 
-	public Long getTimeStamp() {
+	public BsonTimestamp getTimeStamp() {
 		return timeStamp;
+	}
+
+	public void setTimeStamp(BsonTimestamp timeStamp) {
+		this.timeStamp = timeStamp;
 	}
 
 	public SwipeRequestType getRequestType() {
@@ -56,4 +61,5 @@ public class SwipeRequestDao {
 	public void setRequestType(SwipeRequestType requestType) {
 		this.requestType = requestType;
 	}
+
 }
