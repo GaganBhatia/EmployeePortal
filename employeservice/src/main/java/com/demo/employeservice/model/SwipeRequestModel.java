@@ -1,5 +1,8 @@
 package com.demo.employeservice.model;
 
+import org.bson.BsonTimestamp;
+import org.bson.types.BSONTimestamp;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.Valid;
@@ -10,7 +13,7 @@ public class SwipeRequestModel {
 	private String employeeId;
 	private SwipeRequestType swipeRequestType;
 	@JsonProperty(required = false)
-	private long timeStamp;
+	private BsonTimestamp timeStamp;
 
 	public String getBuildingId() {
 		return buildingId;
@@ -36,15 +39,15 @@ public class SwipeRequestModel {
 		this.swipeRequestType = swipeRequestType;
 	}
 
-	public long getTimeStamp() {
+	public BsonTimestamp getTimeStamp() {
 		return timeStamp;
 	}
 
-	public void setTimeStamp(long timeStamp) {
+	public void setTimeStamp(BsonTimestamp timeStamp) {
 		this.timeStamp = timeStamp;
 	}
 
-	public SwipeRequestModel(String buildingId, String employeeId, SwipeRequestType swipeRequestType, long timeStamp) {
+	public SwipeRequestModel(String buildingId, String employeeId, SwipeRequestType swipeRequestType, BsonTimestamp timeStamp) {
 		this.buildingId = buildingId;
 		this.employeeId = employeeId;
 		this.swipeRequestType = swipeRequestType;
