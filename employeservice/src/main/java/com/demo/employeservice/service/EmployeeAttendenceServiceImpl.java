@@ -1,6 +1,12 @@
 package com.demo.employeservice.service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.bson.BsonTimestamp;
@@ -10,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import com.demo.employeservice.model.SwipeRequestDao;
 import com.demo.employeservice.model.SwipeRequestModel;
+import com.demo.employeservice.model.SwipeRequestType;
 import com.demo.employeservice.model.SwipeSummaryModel;
 import com.demo.employeservice.repository.SwipeRequestRepository;
 
@@ -48,8 +55,31 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 
 	@Override
 	public SwipeSummaryModel getSwipeSummary(String employeeId, long timeFrom, long timeTo) {
-		swipeRequestRepository.getSwipeSummary(employeeId, timeFrom, timeTo);
-		return null;
+		List<SwipeRequestDao> swipeDetails = swipeRequestRepository.getSwipeSummary(employeeId, timeFrom, timeTo);
+		SwipeSummaryModel swipeSummary = new  SwipeSummaryModel();
+		if(swipeDetails.size() > 0) {
+			swipeSummary.setEmployeeId(employeeId);
+			swipeSummary.setBuildingId(swipeDetails.get(0).getBuildingId());
+			Optional<SwipeRequestDao> swipeInRequest = swipeDetails.stream().filter(record -> record.getRequestType()!= null && record.getRequestType().equals(SwipeRequestType.SWIPE_IN)).findFirst();
+			if(swipeInRequest.isPresent()) {
+				swipeSummary.setFirstSwipeInRequestTime(swipeInRequest.get().getTimeStamp().getTime());
+			}
+			Optional<SwipeRequestDao> swipeOutRequest = swipeDetails.stream().filter(record -> record.getRequestType()!= null && record.getRequestType().equals(SwipeRequestType.SWIPE_OUT)).findFirst();
+			if(swipeOutRequest.isPresent()) {
+				swipeSummary.setLastSwipeOutRequestTime(swipeOutRequest.get().getTimeStamp().getTime());
+			}
+}		return swipeSummary;
+	}
+
+	@Override
+	public void generateAttendence(String employeeId) {
+
+		SwipeSummaryModel swipeDaySummary = getSwipeSummary(employeeId, 
+				LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC),
+				LocalDate.now().atTime(23, 59).toEpochSecond(ZoneOffset.UTC));		
+		System.out.println("test -> "+swipeDaySummary.getFirstSwipeInRequestTime());
+		System.out.println("test1 -> "+swipeDaySummary.getLastSwipeOutRequestTime());
+
 	}
 
 }

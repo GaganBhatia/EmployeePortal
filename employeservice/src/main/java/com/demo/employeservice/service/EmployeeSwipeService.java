@@ -14,4 +14,6 @@ public interface EmployeeSwipeService {
 	
 	public SwipeSummaryModel getSwipeSummary(String employeeId, long timeFrom, long timeTo);
 
+	public void generateAttendence(String employeeId);
+
 }

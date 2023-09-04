@@ -12,6 +12,6 @@ import com.demo.employeservice.model.SwipeRequestModel;
 @Repository
 public interface SwipeRequestRepository extends MongoRepository<SwipeRequestDao, UUID>{
 	
-	public List<SwipeRequestModel> getSwipeSummary(String employeeId, long timeFrom, long timeTo);
+	public List<SwipeRequestDao> getSwipeSummary(String employeeId, long timeFrom, long timeTo);
 
 }

@@ -2,8 +2,10 @@ package com.demo.employeservice.repository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
+import org.bson.BsonTimestamp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -19,33 +21,31 @@ import com.demo.employeservice.utility.DBConstants;
 public class SwipeRequestRepositoryImpl implements SwipeRequestTemplate{
 	@Autowired MongoTemplate mongoTemplate;
 
-	
-	public List<SwipeRequestModel> getSwipeSummary(String employeeId, long timeFrom, long timeTo){
-		System.out.println("employeeId  -> " + employeeId);
+	//TODO fetch records in 1 single query using group and traverse in-memory
+	public List<SwipeRequestDao> getSwipeSummary(String employeeId, long timeFrom, long timeTo){
+		BsonTimestamp startTime = new  BsonTimestamp(timeFrom);
+		BsonTimestamp endTime = new  BsonTimestamp(timeTo);
 
 		//First Swipe In
 		Criteria swipeIncriteria = new Criteria();
 		swipeIncriteria.andOperator(Criteria.where("employeeId").is(employeeId),Criteria.where("requestType").is(SwipeRequestType.SWIPE_IN)
-				,Criteria.where("timeStamp").lte(timeFrom),Criteria.where("timeStamp").gte(timeFrom)
+				, Criteria.where("timeStamp").gte(startTime)/* ,Criteria.where("timeStamp").lte(endTime) */
 				);
 		Query firstSwipeInQuery = new Query(swipeIncriteria).with(Sort.by(Sort.Direction.ASC, "timeStamp")).limit(1);
-		List<SwipeRequestModel> swipeInRequestDetail = mongoTemplate.find(firstSwipeInQuery, SwipeRequestModel.class, DBConstants.SWIPE_HISTORY_DOCUMENT);
-		//System.out.print("Sample  -> " + Arrays.toString(swipeInRequestDetail.toArray()));
-		
+		List<SwipeRequestDao> swipeInRequestDetail = mongoTemplate.find(firstSwipeInQuery, SwipeRequestDao.class, DBConstants.SWIPE_HISTORY_DOCUMENT);
+		System.out.println("swipeInRequestDetail  -> " + swipeInRequestDetail.get(0).getTimeStamp().getTime());
+		System.out.println("Type  -> " + swipeInRequestDetail.get(0).getRequestType().name());
+
 		//Last SwipeOut
 		Criteria swipeOutCriteria = new Criteria();
 		swipeOutCriteria.andOperator(Criteria.where("employeeId").is(employeeId),Criteria.where("requestType").is(SwipeRequestType.SWIPE_OUT)
-				,Criteria.where("timeStamp").lte(timeFrom),Criteria.where("timeStamp").gte(timeFrom)
+				,Criteria.where("timeStamp").gte(startTime)/*Criteria.where("timeStamp").lte(endTime)*/
 				);
-		Query firstSwipeOutQuery = new Query(swipeOutCriteria).with(Sort.by(Sort.Direction.ASC, "timeStamp")).limit(1);
+		Query firstSwipeOutQuery = new Query(swipeOutCriteria).with(Sort.by(Sort.Direction.DESC, "timeStamp")).limit(1);
+		List<SwipeRequestDao> swipeOutRequestDetail = mongoTemplate.find(firstSwipeOutQuery, SwipeRequestDao.class, DBConstants.SWIPE_HISTORY_DOCUMENT);
+		swipeInRequestDetail.addAll(swipeOutRequestDetail);
 		
-		
-		//TODO fetch records in 1 single query using group and traverse in-memory
-		List<SwipeRequestModel> swipeOutRequestDetail = mongoTemplate.find(firstSwipeOutQuery, SwipeRequestModel.class, DBConstants.SWIPE_HISTORY_DOCUMENT);
-		
-		swipeInRequestDetail.forEach(record -> System.out.println(record.getEmployeeId()));
-		List<SwipeRequestModel> list = new ArrayList<SwipeRequestModel>();
-		return list;
+		return swipeInRequestDetail;
 	}
 
 }
