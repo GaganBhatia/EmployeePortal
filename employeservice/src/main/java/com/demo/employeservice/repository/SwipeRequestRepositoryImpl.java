@@ -44,7 +44,9 @@ public class SwipeRequestRepositoryImpl implements SwipeRequestTemplate{
 		Query firstSwipeOutQuery = new Query(swipeOutCriteria).with(Sort.by(Sort.Direction.DESC, "timeStamp")).limit(1);
 		List<SwipeRequestDao> swipeOutRequestDetail = mongoTemplate.find(firstSwipeOutQuery, SwipeRequestDao.class, DBConstants.SWIPE_HISTORY_DOCUMENT);
 		swipeInRequestDetail.addAll(swipeOutRequestDetail);
-		
+		System.out.println("swipeOutRequestDetail  -> " + swipeOutRequestDetail.get(0).getTimeStamp().getTime());
+		System.out.println("Type  -> " + swipeOutRequestDetail.get(0).getRequestType().name());
+
 		return swipeInRequestDetail;
 	}
 

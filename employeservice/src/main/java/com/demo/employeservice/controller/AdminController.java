@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.demo.employeservice.model.EmployeeAttendenceReportModel;
 import com.demo.employeservice.model.SwipeSummaryModel;
 import com.demo.employeservice.service.EmployeeSwipeService;
 
@@ -26,12 +27,13 @@ public class AdminController {
 		return responseEntity;
 
 	}
-	
-	@GetMapping("/generate-attendence")
-	public ResponseEntity<SwipeSummaryModel> generateAttendence(@RequestParam String employeeId) {
-		 employeeSwipeService.generateAttendence(employeeId);
-		return null;
 
+	@GetMapping("/generate-attendence")
+	public ResponseEntity<EmployeeAttendenceReportModel> generateAttendence(@RequestParam String employeeId) {
+		EmployeeAttendenceReportModel attendenceReport = employeeSwipeService.generateAttendence(employeeId);
+		ResponseEntity responseEntity = new ResponseEntity<EmployeeAttendenceReportModel>(attendenceReport,
+				HttpStatus.OK);
+		return responseEntity;
 	}
 
 }

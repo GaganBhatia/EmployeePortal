@@ -2,6 +2,7 @@ package com.demo.employeservice.service;
 
 import org.springframework.stereotype.Service;
 
+import com.demo.employeservice.model.EmployeeAttendenceReportModel;
 import com.demo.employeservice.model.SwipeRequestModel;
 import com.demo.employeservice.model.SwipeSummaryModel;
 
@@ -14,6 +15,6 @@ public interface EmployeeSwipeService {
 	
 	public SwipeSummaryModel getSwipeSummary(String employeeId, long timeFrom, long timeTo);
 
-	public void generateAttendence(String employeeId);
+	public EmployeeAttendenceReportModel generateAttendence(String employeeId);
 
 }
