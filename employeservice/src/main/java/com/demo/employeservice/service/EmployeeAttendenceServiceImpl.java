@@ -81,17 +81,17 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 			kafkaMessage.setTotalHours(attendenceReport.getTotalHours());
 			kafkaMessage.setAttendence(attendenceReport.getAttendence());
 			kafkaMessage.setAttendenceDate(attendenceReport.getAttendenceDate());
-			
+
 			CompletableFuture<SendResult<String, SwipeSummaryKafkaProducerModel>> future = kafkaJsontemplate.send("test", attendenceReport.getEmployeeId(), kafkaMessage);
-		     future.whenComplete((result, ex) -> {
-		         if (ex == null) {
-		             System.out.println("Sent message=[" + kafkaMessage + 
-		                 "] with offset=[" + result.getRecordMetadata().offset() + "]");
-		         } else {
-		             System.out.println("Unable to send message=[" + 
-		            		 kafkaMessage + "] due to : " + ex.getMessage());
-		         }
-		     });
+			future.whenComplete((result, ex) -> {
+				if (ex == null) {
+					System.out.println("Sent message=[" + kafkaMessage + 
+							"] with offset=[" + result.getRecordMetadata().offset() + "]");
+				} else {
+					System.out.println("Unable to send message=[" + 
+							kafkaMessage + "] due to : " + ex.getMessage());
+				}
+			});
 		} catch (Exception e) {
 			log.error("Exception while pushing data to upstreams" + e.getMessage());
 		}
@@ -105,14 +105,14 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 			swipeSummary.setBuildingId(swipeDetails.get(0).getBuildingId());
 			Optional<SwipeRequestDao> swipeInRequest = swipeDetails.stream()
 					.filter(record -> record.getRequestType() != null
-							&& record.getRequestType().equals(SwipeRequestType.SWIPE_IN))
+					&& record.getRequestType().equals(SwipeRequestType.SWIPE_IN))
 					.findFirst();
 			if (swipeInRequest.isPresent()) {
 				swipeSummary.setFirstSwipeInRequestTime(swipeInRequest.get().getTimeStamp().getTime());
 			}
 			Optional<SwipeRequestDao> swipeOutRequest = swipeDetails.stream()
 					.filter(record -> record.getRequestType() != null
-							&& record.getRequestType().equals(SwipeRequestType.SWIPE_OUT))
+					&& record.getRequestType().equals(SwipeRequestType.SWIPE_OUT))
 					.findFirst();
 			if (swipeOutRequest.isPresent()) {
 				swipeSummary.setLastSwipeOutRequestTime(swipeOutRequest.get().getTimeStamp().getTime());
@@ -151,8 +151,6 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 				- swipeDaySummary.getFirstSwipeInRequestTime();
 		Double hoursSpend = totalTimeSpend.doubleValue() / 3600;
 		attendenceReport.setTotalHours(hoursSpend);
-
-		// int minutes = (seconds % 3600) / 60;
 
 		if (hoursSpend < 4) {
 			attendenceReport.setAttendence(com.demo.employeservice.model.Attendence.ABSENT);
