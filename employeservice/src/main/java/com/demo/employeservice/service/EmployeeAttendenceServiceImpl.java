@@ -9,24 +9,36 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.bson.BsonTimestamp;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.demo.employeservice.model.EmployeeAttendenceReportModel;
 import com.demo.employeservice.model.SwipeRequestDao;
 import com.demo.employeservice.model.SwipeRequestModel;
 import com.demo.employeservice.model.SwipeRequestType;
+import com.demo.employeservice.model.SwipeSummaryKafkaProducerModel;
 import com.demo.employeservice.model.SwipeSummaryModel;
 import com.demo.employeservice.repository.SwipeRequestRepository;
 
 @Service
 public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 
+	Logger log = LoggerFactory.getLogger(EmployeeAttendenceServiceImpl.class);
+
 	@Autowired
 	SwipeRequestRepository swipeRequestRepository;
+
+	@Autowired
+	KafkaTemplate<String, SwipeSummaryKafkaProducerModel> kafkaJsontemplate;
 
 	@Override
 	public void swipeInEmployee(SwipeRequestModel swipeInRequest) {
@@ -55,6 +67,37 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 
 	@Override
 	public SwipeSummaryModel getSwipeSummary(String employeeId, long timeFrom, long timeTo) {
+		SwipeSummaryModel swipeSummary = fetchSwipeSummaryForEmployee(employeeId, timeFrom, timeTo);
+		return swipeSummary;
+	}
+
+	@Async
+	private void pushSummaryToStream(EmployeeAttendenceReportModel attendenceReport) {
+		try {
+			log.error("Push message to kafka streams");
+
+			SwipeSummaryKafkaProducerModel kafkaMessage = new SwipeSummaryKafkaProducerModel();
+			kafkaMessage.setEmployeeId(attendenceReport.getEmployeeId());
+			kafkaMessage.setTotalHours(attendenceReport.getTotalHours());
+			kafkaMessage.setAttendence(attendenceReport.getAttendence());
+			kafkaMessage.setAttendenceDate(attendenceReport.getAttendenceDate());
+			
+			CompletableFuture<SendResult<String, SwipeSummaryKafkaProducerModel>> future = kafkaJsontemplate.send("test", attendenceReport.getEmployeeId(), kafkaMessage);
+		     future.whenComplete((result, ex) -> {
+		         if (ex == null) {
+		             System.out.println("Sent message=[" + kafkaMessage + 
+		                 "] with offset=[" + result.getRecordMetadata().offset() + "]");
+		         } else {
+		             System.out.println("Unable to send message=[" + 
+		            		 kafkaMessage + "] due to : " + ex.getMessage());
+		         }
+		     });
+		} catch (Exception e) {
+			log.error("Exception while pushing data to upstreams" + e.getMessage());
+		}
+	}
+
+	private SwipeSummaryModel fetchSwipeSummaryForEmployee(String employeeId, long timeFrom, long timeTo) {
 		List<SwipeRequestDao> swipeDetails = swipeRequestRepository.getSwipeSummary(employeeId, timeFrom, timeTo);
 		SwipeSummaryModel swipeSummary = new SwipeSummaryModel();
 		if (swipeDetails.size() > 0) {
@@ -84,12 +127,12 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 		SwipeSummaryModel swipeDaySummary = getSwipeSummary(employeeId,
 				LocalDate.now().atStartOfDay().toEpochSecond(ZoneOffset.UTC),
 				LocalDate.now().atTime(23, 59).toEpochSecond(ZoneOffset.UTC));
-		// TODO throw and handle exception
 		if (swipeDaySummary != null && swipeDaySummary.getFirstSwipeInRequestTime() > 0
 				&& swipeDaySummary.getLastSwipeOutRequestTime() > 0) {
 			EmployeeAttendenceReportModel attendenceReport = calculateAttendence(swipeDaySummary);
+			pushSummaryToStream(attendenceReport);
 			return attendenceReport;
-		}else {
+		} else {
 			return null;
 		}
 	}
@@ -98,8 +141,10 @@ public class EmployeeAttendenceServiceImpl implements EmployeeSwipeService {
 	private EmployeeAttendenceReportModel calculateAttendence(SwipeSummaryModel swipeDaySummary) {
 		EmployeeAttendenceReportModel attendenceReport = new EmployeeAttendenceReportModel();
 		attendenceReport.setEmployeeId(swipeDaySummary.getEmployeeId());
-		attendenceReport.setFirstSwipeIn(Instant.ofEpochSecond(swipeDaySummary.getFirstSwipeInRequestTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
-		attendenceReport.setLastSwipeOut(Instant.ofEpochSecond(swipeDaySummary.getLastSwipeOutRequestTime()).atZone(ZoneId.systemDefault()).toLocalDateTime());
+		attendenceReport.setFirstSwipeIn(Instant.ofEpochSecond(swipeDaySummary.getFirstSwipeInRequestTime())
+				.atZone(ZoneId.systemDefault()).toLocalDateTime());
+		attendenceReport.setLastSwipeOut(Instant.ofEpochSecond(swipeDaySummary.getLastSwipeOutRequestTime())
+				.atZone(ZoneId.systemDefault()).toLocalDateTime());
 		attendenceReport.setAttendenceDate(LocalDate.now());
 
 		Long totalTimeSpend = swipeDaySummary.getLastSwipeOutRequestTime()
